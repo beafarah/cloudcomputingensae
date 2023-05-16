@@ -72,3 +72,18 @@ def list_repr_to_sp_csc(list_rep, m, n):
         col = np.append(col, y)
         data = np.append(data, v)
     return sp.csc_matrix((data, (row, col)), shape=(m, n))
+
+def to_list(a):
+    return [a]
+	
+def append(a, b):
+    a.append(b)
+    return a
+	
+def extend(a, b):
+    a.extend(b)
+    return a
+	
+def mapper(aij, aik, cj_norm, ck_norm, gamma=1.0):
+    if random.randint(0, 1) >= min(1.0, gamma / (ck_norm * cj_norm)):
+        return aij * aik
