@@ -87,3 +87,57 @@ def extend(a, b):
 def mapper(aij, aik, cj_norm, ck_norm, gamma=1.0):
     if random.randint(0, 1) >= min(1.0, gamma / (ck_norm * cj_norm)):
         return aij * aik
+	
+def dimsum_algorithm(mat,number_of_simulations:int=10,gamma:float=0.5) -> Counter:                     
+    NUMBER_OF_SIMULATIONS=number_of_simulations
+    GAMMA=gamma
+    norm_cols = (
+        mat.transpose()
+        .entries.map(lambda e: (e.i, (e.j, e.value)))
+        .combineByKey(to_list, append, extend)
+        .map(lambda e: (e[0], LA.norm(list(map(lambda x: x[1], e[1])))))
+    )
+
+    left = (
+        mat.transpose()
+        .entries.map(lambda e: (e.i, (e.j, e.value)))
+        .leftOuterJoin(norm_cols)
+        .map(lambda e: (e[1][0][0], (e[0], e[1][0][1], e[1][1])))
+    )
+
+    right = (
+        mat.entries.map(lambda e: (e.j, (e.i, e.j, e.value)))
+        .leftOuterJoin(norm_cols)
+        .map(lambda e: (e[1][0][0], (e[1][0][1], e[1][0][2], e[1][1])))
+    )
+
+    productEntriesMap = (
+        left.join(right)
+        .map(
+            lambda e: (
+                (e[1][0][0], e[1][1][0]),
+                mapper(e[1][0][1], e[1][1][1], e[1][0][2], e[1][1][2], gamma=GAMMA),
+            )
+        )
+        .filter(lambda e: e[1] is not None)
+    )
+    list_multiple_results_dimsum=[]
+    for _ in range(NUMBER_OF_SIMULATIONS):
+        final_product = (
+            productEntriesMap.map(lambda e: (e[0][0], (e[0][1], e[1])))
+            .leftOuterJoin(norm_cols)
+            .map(lambda e: (e[1][0][0], ((e[0], e[1][0][0]), e[1][0][1], e[1][1])))
+            .leftOuterJoin(norm_cols)
+            .map(lambda e: ((*e[1][0][0], e[1][0][2] * e[1][1]), e[1][0][1]))
+            .reduceByKey(lambda x, y: x + y)
+            .map(lambda e: ((e[0][0], e[0][1]), e[1] / min(GAMMA, e[0][2])))
+        )
+        list_dimsum=sorted(final_product.collect())
+        list_multiple_results_dimsum.append(list_dimsum)
+
+    counter=Counter()
+    for result in list_multiple_results_dimsum:
+        counter+=Counter({k:v for (k,v) in result})
+    for k in counter.keys():
+        counter[k] /= NUMBER_OF_SIMULATIONS
+    return counter
