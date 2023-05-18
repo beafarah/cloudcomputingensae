@@ -3,7 +3,7 @@ import numpy as np
 import random
 def sparse_generator(m,n,L=1):
     """
-    Function that generates sparse matrix with n rows and m columns, each row having at most L nonzero entries
+    Function that generates sparse matrix with m rows and n columns, each row having at most L nonzero entries
     input:
     m: number of rows
     n: number of columns
