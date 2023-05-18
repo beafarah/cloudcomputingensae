@@ -54,7 +54,7 @@ def norm(A):
     norm = (np.square(A).sum(axis=0))**(1/2) 
     return norm
 
-def DIMSUMMApper(A, ind, gamma=0.5, nb_it = 1000):
+def DIMSUMMApper(A, ind, gamma=1.0, nb_it = 1000):
     """
     Efficient Mapper
     input:
@@ -86,7 +86,7 @@ def DIMSUMMApper(A, ind, gamma=0.5, nb_it = 1000):
     return results.sum(axis=0)/(len(results))
 
 
-def DIMSUMReducer(A, col_maps, gamma = 0.5):
+def DIMSUMReducer(A, col_maps, gamma = 1.0):
     """
     Efficient Reducer
     input:
@@ -102,16 +102,19 @@ def DIMSUMReducer(A, col_maps, gamma = 0.5):
     result_mat = sum(col_maps)
     #for lm in col_maps:
         #result_mat+=np.matrix(lm)
+    """
+    # siggested ponderation from the paper
     for i in range(nrow):
         for j in range(ncol):
             if gamma> Anorm[i]*Anorm[j]:
                 result_mat[i][j]=1/(Anorm[i]*Anorm[j]) * result_mat[i][j]
             else:
                 result_mat[i][j]= (1/gamma) * result_mat[i][j]
+    """
     return result_mat
 
 
-def DIMSUMProd(A, gamma = 0.5, nb_it = 1500):
+def DIMSUMProd(A, gamma = 1.0, nb_it = 1500):
     """
     Function that efficiently computes A^T A for sparse matrix
     input:
